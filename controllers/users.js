@@ -121,7 +121,7 @@ const repeatEmailForVerifyUser = async (req, res, next) => {
   const { email } = req.body
   const user = await Users.findByEmail(email)
   if (user) {
-    const { email, name, verifyToken } = user
+    const { email, verifyToken } = user
     const emailService = new EmailService(
       process.env.NODE_ENV,
       new CreateSenderNodemailer(),
