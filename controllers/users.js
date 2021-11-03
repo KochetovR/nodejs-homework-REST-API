@@ -128,7 +128,6 @@ const repeatEmailForVerifyUser = async (req, res, next) => {
     )
     const statusEmail = await emailService.sendVerifyEmail(
       email,
-      name,
       verifyToken,
     )
   }
