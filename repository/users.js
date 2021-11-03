@@ -13,8 +13,21 @@ const create = async (options) => {
   return await user.save()
 }
 
+const updateAvatar = async (id, avatar, idUserCloud = null) => {
+  return await User.updateOne({ _id: id }, { avatar, idUserCloud })
+}
+
+const findUserByVerifyToken = async (verifyToken) => {
+  const token = await User.findOne({verifyToken})
+  return token
+}
+
 const updateToken = async (id, token) => {
   return await User.updateOne({ _id: id }, { token })
+}
+
+const updateTokenVerify = async (id, verify, verifyToken) => {
+  return await User.updateOne({ _id: id, verify, verifyToken })
 }
 
 // const updateSubscription = async (id, body) => {
@@ -25,4 +38,4 @@ const updateToken = async (id, token) => {
 //     return res
 // }
 
-module.exports = { findById, findByEmail, create, updateToken }
+module.exports = { findById, findByEmail, create, updateToken, updateAvatar, updateTokenVerify, findUserByVerifyToken }

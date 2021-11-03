@@ -1,5 +1,6 @@
 const { Schema, model } = require('mongoose')
 const bcrypt = require('bcryptjs')
+const { v4: uuidv4 } = require('uuid');
 const SALT_FACTOR = 6
 
 const userSchema = new Schema(
@@ -21,6 +22,15 @@ const userSchema = new Schema(
     token: {
       type: String,
       default: null,
+    },
+    verify: {
+      type: Boolean,
+      default: false,
+    },
+    verifyToken: {
+      type: String,
+      required: true,
+      default: uuidv4(),
     },
   },
   {

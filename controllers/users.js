@@ -3,6 +3,11 @@ const Users = require('../repository/users')
 const { HttpCode } = require('../config/constants')
 require('dotenv').config()
 const SECRET_KEY = process.env.JWT_SECRET_KEY
+const EmailService = require('../services/email/service')
+const {
+  CreateSenderSendGrid,
+  CreateSenderNodemailer,
+} = require('../services/email/sender')
 
 const signup = async (req, res, next) => {
   const { email, password, subscription } = req.body
@@ -16,6 +21,16 @@ const signup = async (req, res, next) => {
   }
   try {
     const newUser = await Users.create({  email, password, subscription })
+    const emailService = new EmailService(
+      process.env.NODE_ENV,
+      new CreateSenderNodemailer(),
+    )
+
+    const statusEmail = await emailService.sendVerifyEmail(
+      newUser.email,
+      newUser.verifyToken,
+    )
+    console.log(newUser.verifyToken);
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
@@ -23,6 +38,7 @@ const signup = async (req, res, next) => {
         id: newUser.id,
         email: newUser.email,
         subscription: newUser.subscription,
+        successEmail: statusEmail,
       },
     })
   } catch (e) {
@@ -33,8 +49,8 @@ const signup = async (req, res, next) => {
 const login = async (req, res, next) => {
   const { email, password } = req.body
   const user = await Users.findByEmail(email)
-  const isValidPassword = await user.isValidPassword(password)
-  if (!user || !isValidPassword) {
+  const isValidPassword = await user?.isValidPassword(password)
+  if (!user || !isValidPassword || !user?.verify) {
     return res.status(HttpCode.UNAUTHORIZED).json({
       status: 'error',
       code: HttpCode.UNAUTHORIZED,
@@ -82,6 +98,49 @@ const current = async (req, res) => {
   })
 }
 
+const verifyUser = async (req, res, next) => {
+  const user = await Users.findUserByVerifyToken(req.params.token)
+  if (user) {
+    await Users.updateTokenVerify(user._id, true, null)
+    return res.status(HttpCode.OK).json({
+      status: 'success',
+      code: HttpCode.OK,
+      data: {
+        message: 'Success',
+      },
+    })
+  }
+  return res.status(HttpCode.BAD_REQUEST).json({
+    status: 'error',
+    code: HttpCode.BAD_REQUEST,
+    message: 'Invalid token',
+  })
+}
+
+const repeatEmailForVerifyUser = async (req, res, next) => {
+  const { email } = req.body
+  const user = await Users.findByEmail(email)
+  if (user) {
+    const { email, name, verifyToken } = user
+    const emailService = new EmailService(
+      process.env.NODE_ENV,
+      new CreateSenderNodemailer(),
+    )
+    const statusEmail = await emailService.sendVerifyEmail(
+      email,
+      name,
+      verifyToken,
+    )
+  }
+  return res.status(HttpCode.OK).json({
+    status: 'success',
+    code: HttpCode.OK,
+    data: {
+      message: 'Success',
+    },
+  })
+}
+
 // const updateSubscription = async (req, res) => {
 //   const id = req.user._id
 //   const subscription = req.body
@@ -98,5 +157,7 @@ module.exports = {
   login,
   logout,
   current,
+  verifyUser,
+  repeatEmailForVerifyUser,
   // updateSubscription
 }
